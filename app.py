@@ -1,28 +1,42 @@
 import gradio as gr
-from ultralytics import YOLO
 import numpy as np
-from PIL import Image
+import cv2
+from ultralytics import YOLO
 
-# Load trained model
+# Load model ONCE when server starts
 model = YOLO("best.pt")
 
 def count_shrimp(image):
     if image is None:
         return None, "No image uploaded"
 
-    image_np = np.array(image)
-    results = model(image_np)
+    # Convert PIL image → numpy
+    img = np.array(image)
 
+    # Resize to make CPU inference fast (VERY IMPORTANT)
+    img = cv2.resize(img, (224, 224))
+
+    # Run YOLO
+    results = model(img)
+
+    # Count detections
     count = len(results[0].boxes)
-    result_image = results[0].plot()
 
-    return result_image, f"Detected larvae: {count}"
+    # Get annotated image
+    output_img = results[0].plot()
+
+    return output_img, f"Detected larvae: {count}"
 
 demo = gr.Interface(
     fn=count_shrimp,
-    inputs=gr.Image(type="pil"),
-    outputs=[gr.Image(), gr.Textbox()],
-    title="Shrimp Larvae Counter"
+    inputs=gr.Image(type="pil", label="Upload Shrimp Image"),
+    outputs=[
+        gr.Image(label="Detection Result"),
+        gr.Textbox(label="Larvae Count")
+    ],
+    title="Shrimp Larvae Counter",
+    description="YOLOv8-based shrimp larvae detection"
 )
 
+# IMPORTANT FOR RENDER
 demo.launch(server_name="0.0.0.0", server_port=7860)
