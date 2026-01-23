@@ -10,10 +10,10 @@ def count_shrimp(image):
     if image is None:
         return None, "No image uploaded"
 
-    # Convert PIL image → numpy
+    # Convert PIL image → numpy array
     img = np.array(image)
 
-    # Resize to make CPU inference fast (VERY IMPORTANT)
+    # Resize to make CPU inference faster
     img = cv2.resize(img, (224, 224))
 
     # Run YOLO
@@ -27,16 +27,22 @@ def count_shrimp(image):
 
     return output_img, f"Detected larvae: {count}"
 
+# -------------------------
+# Gradio interface
+# -------------------------
 demo = gr.Interface(
     fn=count_shrimp,
-    inputs=gr.Image(type="pil", label="Upload Shrimp Image"),
+    # ✅ Enable webcam input
+    inputs=gr.Image(source="webcam", type="pil", label="Capture Shrimp Image"),
     outputs=[
         gr.Image(label="Detection Result"),
         gr.Textbox(label="Larvae Count")
     ],
     title="Shrimp Larvae Counter",
-    description="YOLOv8-based shrimp larvae detection"
+    description="YOLOv8-based shrimp larvae detection (webcam enabled)"
 )
 
-# IMPORTANT FOR RENDER
-demo.launch(server_name="0.0.0.0", server_port=7860)
+# -------------------------
+# Launch for Render
+# -------------------------
+demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
